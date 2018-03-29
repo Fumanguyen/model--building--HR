@@ -1,0 +1,39 @@
+#model building
+
+#Import file
+library(readxl)
+HR <- read_excel('~/Desktop/MBA study/Courses/Data Analytics Materials/Learning R/HW6.xls')
+
+library(tidyverse)
+library(car)
+library(MASS)
+library(leaps)
+#Make Engineer become indicator variables
+HR <- HR %>% mutate(Engineer_Yes = case_when(Engineer == 'Yes' ~ 1, Engineer == 'No' ~ 0, TRUE ~ NA_real_))
+
+# Run regression with all independent variables
+fit <- lm( formula = Sales ~ Wonder + SC + Experience + Engineer_Yes, data = HR)
+summary(fit) #check residual, R-square, F-test, Standard error, individual coefficient significance
+vif(fit) #check VIF to see whether there is multi-colinearity problem
+
+#Best Subset or stepwise regression
+?stepAIC
+null <-  lm(formula = Sales ~ 1, data = HR) #don't use %>% in model building
+step <- stepAIC(fit, direction = 'both')  #way 1
+step <- step(null, scope= list(upper=fit), data = HR, direction = 'both') #way 2
+
+####Regression Dianotics
+#Normality checking for residual
+stdres <- rstandard(fit) #get the standardized residual into a vector
+hist(stdres, freq = FALSE) #Histogram of standardized residual
+
+
+#Checking heteroscadacity
+fittedvalue <- fitted(fit)
+plot(fittedvalue, stdres, main = "Plot of Standardized Residual over Fitted Value")
+
+#Checking autocorrelation
+durbinWatsonTest(fit) #Cannot reject the null hypothesis: there is no autocorrelation
+
+#Outlier and Influential observation
+outlierTest(fit) #no sign of otlier
